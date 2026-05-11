@@ -1,0 +1,138 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-w7ragkb}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/001_init.sql
+      - ./sql/002_web_users.sql:/docker-entrypoint-initdb.d/002_web_users.sql
+      - ./sql/003_openclaw_integration.sql:/docker-entrypoint-initdb.d/003_openclaw_integration.sql
+      - ./sql/004_ivfflat_probes.sql:/docker-entrypoint-initdb.d/004_ivfflat_probes.sql
+      - ./sql/005_document_sync_status.sql:/docker-entrypoint-initdb.d/005_document_sync_status.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  slack-bot:
+    build: ./backend_agent_api
+    user: "0:0"
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-w7ragkb}
+      - GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gcp-sa-key.json
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - GOOGLE_CLOUD_REGION=${GOOGLE_CLOUD_REGION:-us-central1}
+      - LLM_CHOICE=${LLM_CHOICE:-gemini-2.0-flash}
+      - EMBEDDING_MODEL_CHOICE=${EMBEDDING_MODEL_CHOICE:-gemini-embedding-001}
+      - EMBEDDING_DIMENSIONS=${EMBEDDING_DIMENSIONS:-768}
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
+      - BRAVE_API_KEY=${BRAVE_API_KEY}
+      - SEARXNG_BASE_URL=${SEARXNG_BASE_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL:-http://frontend:8080}
+      - COOKIE_SECURE=${COOKIE_SECURE:-true}
+      - CONTROL_PLANE_HOST=${CONTROL_PLANE_HOST:-127.0.0.1}
+      - CONTROL_PLANE_PORT=${CONTROL_PLANE_PORT:-18789}
+      - GATEWAY_ENABLED=${GATEWAY_ENABLED:-true}
+      - RAG_DOCUMENTS_DIR=/rag-documents
+      - SYNC_CHECK_INTERVAL=${SYNC_CHECK_INTERVAL:-60}
+      - SYNC_REINDEX_CONCURRENCY=${SYNC_REINDEX_CONCURRENCY:-3}
+      - SYNC_REINDEX_TIMEOUT=${SYNC_REINDEX_TIMEOUT:-300}
+      - WS_PING_INTERVAL=${WS_PING_INTERVAL:-30}
+      - WS_MAX_CONNECTIONS_PER_USER=${WS_MAX_CONNECTIONS_PER_USER:-5}
+    volumes:
+      - ./rag-documents:/rag-documents
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    secrets:
+      - gcp-sa-key.json
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+
+  rag-pipeline:
+    build: ./backend_rag_pipeline
+    user: "0:0"
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-w7ragkb}
+      - GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gcp-sa-key.json
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - GOOGLE_CLOUD_REGION=${GOOGLE_CLOUD_REGION:-us-central1}
+      - EMBEDDING_MODEL_CHOICE=${EMBEDDING_MODEL_CHOICE:-gemini-embedding-001}
+      - EMBEDDING_DIMENSIONS=${EMBEDDING_DIMENSIONS:-768}
+      - RAG_PIPELINE_TYPE=${RAG_PIPELINE_TYPE:-local}
+      - RUN_MODE=${RUN_MODE:-continuous}
+      - RAG_PIPELINE_ID=${RAG_PIPELINE_ID}
+      - RAG_WATCH_DIRECTORY=/app/Local_Files/data
+    volumes:
+      - ./rag-documents:/app/Local_Files/data
+      - ./google-credentials:/app/Google_Drive/credentials
+    secrets:
+      - gcp-sa-key.json
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
+        - VITE_AGENT_ENDPOINT=${VITE_AGENT_ENDPOINT:-/api/agent}
+        - VITE_ENABLE_STREAMING=${VITE_ENABLE_STREAMING:-false}
+    restart: always
+    depends_on:
+      - slack-bot
+    ports:
+      - "8080:8080"
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+volumes:
+  pgdata:
+
+networks:
+  internal:
+    driver: bridge
+
+secrets:
+  gcp-sa-key.json:
+    file: ./secrets/gcp-sa-key.json

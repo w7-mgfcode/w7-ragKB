@@ -1,0 +1,15 @@
+[Unit]
+Description=w7-ragKB RAG Pipeline
+After=slack-bot.service
+Requires=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/w7-ragkb
+ExecStart=/usr/bin/docker compose up rag-pipeline
+ExecStop=/usr/bin/docker compose stop rag-pipeline
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=w7-ragKB Slack Bot (Agent + PostgreSQL)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/w7-ragkb
+ExecStart=/usr/bin/docker compose up slack-bot postgres
+ExecStop=/usr/bin/docker compose down
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
