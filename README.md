@@ -1,9 +1,7 @@
-<!-- Badges intentionally use placeholder ORG/REPO. Update once the GitHub remote is reconciled. -->
-
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/w7-mgfcode/w7-ragKB)](https://github.com/w7-mgfcode/w7-ragKB/releases)
+[![License](https://img.shields.io/github/license/w7-mgfcode/w7-ragKB)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![Node](https://img.shields.io/badge/node-20%2B-green.svg)](https://nodejs.org/)
-[![Status](https://img.shields.io/badge/release-pre--v0.1.0-orange.svg)](#releases)
 
 # w7-ragKB
 
@@ -86,7 +84,7 @@ The agent service (`backend_agent_api/main.py`) boots the DB pool, SessionManage
 
 ## Releases
 
-`v0.1.0` is the planned first tagged release under the w7-ragKB identity. This directory is the release-ready snapshot produced by the shaping-repo-release skill; the tag has not been cut yet. See [`CHANGELOG.md`](CHANGELOG.md) for the planned-release notes.
+`v0.1.0` is the first tagged release under the w7-ragKB identity. Download the source archive or the `w7-ragKB-v0.1.0.tar.gz` asset from the [Releases page](https://github.com/w7-mgfcode/w7-ragKB/releases). See [`CHANGELOG.md`](CHANGELOG.md) for release notes.
 
 ## Contributing
 

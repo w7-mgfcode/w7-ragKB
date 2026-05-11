@@ -21,14 +21,13 @@ This entry tracks work landing on `main` after the v0.1.0 cut. Update with each 
 
 ---
 
-## [v0.1.0] — planned, not yet tagged
+## [v0.1.0] — 2026-05-11
 
 First semver-tagged release under the **w7-ragKB** identity. Supersedes the historical
 `openclaw-freeze-v1` tag.
 
-This project releases via the GitHub-auto-generated source archive only — `docker-compose.yml`
-builds from local source contexts, so the source archive *is* the deployable artifact.
-No additional release assets are uploaded.
+Operators can `docker compose up` straight from a clone, or download the
+`w7-ragKB-v0.1.0.tar.gz` asset attached to the GitHub release.
 
 ### Added
 - Multi-channel AI agent platform built on Pydantic AI + Vertex AI Gemini, served through
@@ -73,6 +72,3 @@ No additional release assets are uploaded.
   unless explicitly landed first.
 - `deploy.py --type cloud` requires a `docker-compose.caddy.yml` companion file
   that is not yet checked in. The `--type local` profile is fully supported.
-- The configured GitHub remote `w7-l7ab/openclaw-integration` does not resolve
-  via `gh repo view`; remote reconciliation is required before publishing the
-  release.
